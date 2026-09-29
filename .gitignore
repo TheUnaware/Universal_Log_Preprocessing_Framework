@@ -1,0 +1,27 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# Output and temp files
+merged_output.json
+*.log
+!sample_logs/*.log
+.ulpf_cache/
+scratch/
+
+# IDE and OS
+.DS_Store
+Thumbs.db
+.idea/
+*.sublime-project
+*.sublime-workspace

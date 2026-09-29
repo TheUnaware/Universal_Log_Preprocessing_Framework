@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ULPF — Log Engine Dashboard</title>
+<style>
+  :root{
+    --bg:#EFECE4;
+    --panel:#FFFFFF;
+    --panel-dark:#14140F;
+    --ink:#15140F;
+    --ink-soft:#6B6A62;
+    --line:#E2DED2;
+    --amber:#F4B740;
+    --amber-ink:#141208;
+    --green:#1E9E5A;
+    --green-bg:#E4F6EC;
+    --red:#D14343;
+    --red-bg:#FBE7E7;
+    --yellow-ink:#A9660B;
+    --yellow-bg:#FDF1DD;
+    --radius:16px;
+    --radius-sm:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{ display:flex; min-height:100vh; }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    width:76px;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 0;
+    gap:28px;
+  }
+  .logo{
+    width:44px;height:44px;border-radius:12px;
+    background:var(--panel-dark);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:13px;letter-spacing:0.5px;
+  }
+  .nav{
+    display:flex;flex-direction:column;gap:10px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:8px;
+  }
+  .nav-btn{
+    width:44px;height:44px;border-radius:10px;
+    border:none;background:transparent;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink-soft);
+    position:relative;
+    transition:background .15s ease, color .15s ease;
+  }
+  .nav-btn svg{width:19px;height:19px;}
+  .nav-btn:hover{ background:#F2F0E8; color:var(--ink); }
+  .nav-btn.active{ background:var(--panel-dark); color:#fff; }
+  .nav-dot{
+    position:absolute; top:6px; right:6px;
+    width:7px;height:7px;border-radius:50%;
+    background:var(--amber);
+  }
+  .sidebar-foot{ margin-top:auto; display:flex; flex-direction:column; gap:10px; align-items:center;}
+  .foot-btn{
+    width:40px;height:40px;border-radius:12px;
+    background:var(--panel); border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;color:var(--ink-soft);
+  }
+  .ai-btn{ background:var(--amber); color:var(--amber-ink); font-weight:700; font-size:13px; border:none;}
+
+  /* ---------- MAIN ---------- */
+  .main{ flex:1; padding:24px 32px 60px; max-width:1600px; }
+  .topbar{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:20px;
+    margin-bottom:22px; flex-wrap:wrap;
+  }
+  .status-row{
+    display:flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--ink-soft); font-weight:600;
+    letter-spacing:.04em; margin-bottom:6px;
+  }
+  .status-dot{ width:7px;height:7px;border-radius:50%; background:var(--green); }
+  .title-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  h1{ font-size:26px; margin:0; font-weight:700; letter-spacing:-0.01em; }
+  .pill{
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;
+    background:var(--panel); border:1px solid var(--line); color:var(--ink-soft);
+  }
+  .pill.online{ background:var(--green-bg); color:var(--green); border-color:transparent; display:flex; align-items:center; gap:5px;}
+  .pill.online:before{ content:""; width:6px;height:6px;border-radius:50%; background:var(--green); }
+  .subtitle{ color:var(--ink-soft); font-size:14px; margin-top:6px; }
+
+  .topbar-actions{ display:flex; align-items:center; gap:10px; }
+  .search{
+    display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:10px 14px; width:260px; color:var(--ink-soft); font-size:13px;
+  }
+  .search svg{ width:15px;height:15px; flex-shrink:0; }
+  .search input{ border:none; outline:none; background:transparent; font-size:13px; width:100%; color:var(--ink); }
+  .btn{
+    display:flex; align-items:center; gap:7px;
+    border-radius:12px; border:1px solid var(--line); background:var(--panel);
+    padding:10px 16px; font-size:13px; font-weight:600; color:var(--ink);
+    cursor:pointer; white-space:nowrap;
+  }
+  .btn svg{ width:14px;height:14px; }
+  .btn.primary{ background:var(--panel-dark); color:#fff; border-color:var(--panel-dark); }
+  .btn.amber{ background:var(--amber); color:var(--amber-ink); border-color:var(--amber); font-weight:700; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  /* ---------- CARDS ---------- */
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px;
+  }
+  .grid-2{ display:grid; grid-template-columns:1.4fr 1fr; gap:20px; margin-bottom:20px; }
+  @media(max-width:1000px){ .grid-2{ grid-template-columns:1fr; } }
+
+  .overview-card{
+    background:linear-gradient(120deg,#F3EBD8 0%, #EFE6D3 45%, #F1E2D6 100%);
+    border:1px solid var(--line);
+  }
+  .eyebrow{ font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--ink-soft); margin-bottom:10px; }
+  .overview-card h2{ font-size:26px; margin:0 0 10px; font-weight:700; letter-spacing:-0.01em; }
+  .overview-card p{ color:#4d4b42; font-size:14px; line-height:1.55; max-width:480px; margin:0; }
+  .stat-row{ display:flex; gap:48px; margin-top:36px; }
+  .stat-num{ font-size:26px; font-weight:700; }
+  .stat-num.amber{ color:#D97A22; }
+  .stat-label{ font-size:12px; color:#6b6a5f; margin-top:2px; }
+
+  .exec-card{ background:var(--panel-dark); color:#fff; }
+  .exec-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .exec-head h3{ margin:0; font-size:16px; font-weight:700; }
+  .badge-step{ font-size:11px; font-weight:700; background:var(--amber); color:var(--amber-ink); padding:5px 10px; border-radius:999px; }
+  .step{
+    display:flex; align-items:center; gap:12px;
+    background:#1E1E17; border-radius:12px; padding:12px 14px; margin-bottom:10px;
+  }
+  .step-icon{
+    width:26px;height:26px;border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;
+  }
+  .step-icon.done{ background:var(--green); color:#fff; }
+  .step-icon.active{ background:var(--amber); color:var(--amber-ink); }
+  .step-icon.todo{ background:#33332A; color:#9C9B8F; }
+  .step-title{ font-size:13px; font-weight:600; }
+  .step-sub{ font-size:12px; color:#9C9B8F; margin-top:1px; }
+  .exec-cta{
+    width:100%; margin-top:6px; background:var(--amber); color:var(--amber-ink);
+    border:none; border-radius:12px; padding:14px; font-weight:700; font-size:14px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .exec-cta:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .dropzone{
+    border:2px dashed var(--line); border-radius:var(--radius);
+    padding:50px 20px; text-align:center; background:var(--panel);
+    cursor:pointer; transition:border-color .15s;
+  }
+  .dropzone.drag{ border-color:var(--amber); background:#FFFBF0; }
+  .dropzone-icon{
+    width:44px;height:44px;border-radius:12px;background:#F2F0E8;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+  }
+  .dropzone h4{ margin:0 0 6px; font-size:15px; font-weight:700; }
+  .dropzone p{ margin:0 0 18px; font-size:13px; color:var(--ink-soft); }
+  .dropzone p b{ color:var(--ink); }
+
+  /* Uploaded files table */
+  .table-card{ margin-top:20px; }
+  .table-card-head{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+  .table-card-head h3{ margin:0 0 4px; font-size:16px; font-weight:700; }
+  .table-card-head p{ margin:0; font-size:13px; color:var(--ink-soft); }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line); }
+  td{ padding:12px 10px; border-bottom:1px solid #F0EEE5; vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  .file-cell{ display:flex; align-items:center; gap:9px; font-weight:600; }
+  .tag{ font-size:11px; font-weight:700; background:#F2F0E8; padding:3px 8px; border-radius:6px; color:var(--ink-soft); }
+  .status-chip{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; display:inline-block; }
+  .status-chip.ok{ background:var(--green-bg); color:var(--green); }
+  .status-chip.err{ background:var(--red-bg); color:var(--red); }
+  .icon-btn{ background:none;border:none;cursor:pointer;color:var(--ink-soft); display:flex; }
+  .icon-btn:hover{ color:var(--red); }
+
+  /* Stat cards row (mapping review page) */
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  @media(max-width:900px){ .stat-grid{ grid-template-columns:repeat(2,1fr); } }
+  .stat-card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+  .stat-card .eyebrow{ margin-bottom:8px; }
+  .stat-card .big{ font-size:26px; font-weight:700; }
+  .stat-card .sub{ font-size:12px; color:var(--ink-soft); margin-top:2px; font-weight:600; }
+  .stat-card.pending .big{ color:#B9600C; }
+  .stat-card.pending .sub{ color:#B9600C; }
+
+  .section-head{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;}
+  .section-head h3{ margin:0 0 4px; font-size:18px; font-weight:700; }
+  .section-head p{ margin:0; font-size:13px; color:var(--ink-soft); }
+
+  .mapping-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:1100px){ .mapping-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:700px){ .mapping-grid{ grid-template-columns:1fr; } }
+  .map-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:14px; }
+  .map-card-head{ display:flex; align-items:center; justify-content:space-between; }
+  .map-card-head .src{ font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--ink-soft); }
+  .match-chip{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; background:var(--green-bg); color:var(--green); }
+  .match-chip.mid{ background:var(--yellow-bg); color:var(--yellow-ink); }
+  .field-box{ background:#F7F5EF; border-radius:12px; padding:14px; }
+  .field-label{ font-size:10px; font-weight:700; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:4px; }
+  .field-val{ font-size:14px; font-weight:700; color:#B23A3A; font-family:ui-monospace,Menlo,monospace; }
+  .field-val.green{ color:#1E7A46; }
+  .divider-arrow{ text-align:center; color:var(--ink-soft); font-size:12px; margin:-6px 0; }
+  .sample-row{ font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:8px; }
+  .sample-code{ font-family:ui-monospace,Menlo,monospace; background:#F2F0E8; padding:2px 7px; border-radius:6px; font-size:11.5px; color:var(--ink); }
+  .evidence-list{ font-size:12px; color:var(--ink-soft); margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:4px;}
+  .evidence-list li:before{ content:"\2022 "; color:#C9C6B8; font-size:9px; }
+  .map-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .map-btn{ min-height:40px; border-radius:10px; padding:10px; font-size:12.5px; font-weight:700; border:1px solid var(--line); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease; }
+  .map-btn.accept{ background:var(--green); color:#fff; border-color:var(--green); }
+  .map-btn.accept:hover{ background:#187F49; border-color:#187F49; box-shadow:0 3px 8px rgba(30,158,90,.18); transform:translateY(-1px); }
+  .map-btn.skip{ background:var(--panel); color:var(--ink-soft); }
+  .map-btn.skip:hover{ background:var(--red-bg); color:var(--red); border-color:#EFCACA; }
+  .map-btn:focus-visible{ outline:3px solid rgba(244,183,64,.55); outline-offset:2px; }
+  .map-btn.ghost{ background:var(--panel); color:var(--ink-soft); font-weight:600; }
+  .map-btn:disabled{ opacity:.4; cursor:default; }
+  .decided-tag{ font-size:11px; font-weight:700; padding:6px 10px; border-radius:8px; text-align:center; }
+  .decided-tag.accepted{ background:var(--green-bg); color:var(--green); }
+  .decided-tag.skipped{ background:#F2F0E8; color:var(--ink-soft); }
+
+  /* Records table page */
+  .filter-row{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .filter-row .search{ flex:1; min-width:220px; }
+  select.dropdown{
+    border:1px solid var(--line); background:var(--panel); border-radius:12px;
+    padding:10px 14px; font-size:13px; font-weight:600; color:var(--ink); cursor:pointer;
+  }
+  .records-card .table-card-head{ margin-bottom:10px; }
+  .found-pill{ font-size:12px; font-weight:700; background:#F2F0E8; padding:5px 12px; border-radius:999px; color:var(--ink-soft); }
+  .status-val{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; }
+  .status-val.completed{ background:var(--green-bg); color:var(--green); }
+  .status-val.cancelled, .status-val.failed{ background:var(--red-bg); color:var(--red); }
+  .status-val.active, .status-val.success{ background:var(--yellow-bg); color:var(--yellow-ink); }
+  .pager{ display:flex; align-items:center; justify-content:space-between; margin-top:16px; font-size:13px; color:var(--ink-soft); }
+  .pager-btns{ display:flex; gap:8px; }
+  .pager-btn{ width:32px;height:32px;border-radius:8px; border:1px solid var(--line); background:var(--panel); display:flex;align-items:center;justify-content:center; cursor:pointer; color:var(--ink-soft);}
+  .pager-btn:disabled{ opacity:.4; cursor:default; }
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  .empty-state svg{ width:36px;height:36px; margin-bottom:12px; opacity:.5; }
+
+  /* Lineage page */
+  .lineage-grid{ display:grid; grid-template-columns:1fr 1.4fr; gap:20px; }
+  @media(max-width:1000px){ .lineage-grid{ grid-template-columns:1fr; } }
+  .chip-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .field-chip{ font-size:12px; font-weight:700; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:var(--panel); cursor:pointer; color:var(--ink-soft); }
+  .field-chip.active{ background:var(--panel-dark); color:#fff; border-color:var(--panel-dark); }
+  .root-box{ background:#FFF7E6; border:1px solid #F3DFAE; border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .root-dot{ width:8px;height:8px;border-radius:50%; background:var(--amber); flex-shrink:0; }
+  .root-box .lbl{ font-size:11px; font-weight:700; color:#9A6A17; }
+  .root-box .val{ font-size:15px; font-weight:700; text-decoration:underline; }
+  .cluster-item{ display:flex; align-items:center; justify-content:space-between; background:#F7F5EF; border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .cluster-item .name{ font-family:ui-monospace,Menlo,monospace; font-weight:700; color:#B23A3A; font-size:13px; }
+  .cluster-item .dist{ font-size:12px; color:var(--ink-soft); }
+  .footnote{ font-size:12px; color:var(--ink-soft); margin-top:14px; }
+  .lineage-table th, .lineage-table td{ font-size:12.5px; }
+  .type-tag{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; }
+  .type-tag.AUTO{ background:var(--green-bg); color:var(--green); }
+  .type-tag.MANUAL{ background:var(--yellow-bg); color:var(--yellow-ink); }
+  .type-tag.CACHED{ background:#E7EEFB; color:#3059B5; }
+  .conf-good{ color:var(--green); font-weight:700; }
+  .conf-mid{ color:var(--yellow-ink); font-weight:700; }
+  .lineage-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+
+  .hidden{ display:none !important; }
+  code.mono{ font-family:ui-monospace,Menlo,monospace; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <div class="sidebar">
+    <div class="logo">UL</div>
+    <div class="nav">
+      <button type="button" class="nav-btn active" data-page="upload" title="Upload &amp; Overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6"/></svg>
+      </button>
+      <button type="button" class="nav-btn" data-page="mappings" title="Suggested Mappings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M6 9v6"/><path d="M6 6h9a3 3 0 0 1 3 3v0"/><circle cx="18" cy="15" r="0"/></svg>
+        <span class="nav-dot hidden" id="mapDot"></span>
+      </button>
+      <button type="button" class="nav-btn" data-page="records" title="Unified Records">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 4v16"/></svg>
+      </button>
+      <button type="button" class="nav-btn" data-page="lineage" title="Lineage Report">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      </button>
+    </div>
+    <div class="sidebar-foot">
+      <div class="foot-btn">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
+      </div>
+      <div class="foot-btn ai-btn">AI</div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main">
+
+    <!-- ---------- TOPBAR (shared) ---------- -->
+    <div class="topbar">
+      <div>
+        <div class="status-row"><span class="status-dot" id="connDot"></span><span id="connLabel">CONNECTING TO PYTHON ENGINE...</span></div>
+        <div class="title-row">
+          <h1>Log Engine Dashboard</h1>
+          <span class="pill">v2.4</span>
+          <span class="pill online">Engine Online</span>
+        </div>
+        <div class="subtitle" id="pageSubtitle">Convert heterogeneous vendor logs into a unified canonical structure.</div>
+      </div>
+      <div class="topbar-actions">
+        <div class="search" style="width:200px;" title="FastAPI backend URL">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+          <input id="apiBaseInput" value="http://localhost:8000" placeholder="Backend API URL">
+        </div>
+        <button type="button" class="btn" id="resetBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Reset Demo
+        </button>
+        <button type="button" class="btn primary" id="runPipelineBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
+          Run Pipeline
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 1: UPLOAD / OVERVIEW ================= -->
+    <div id="page-upload">
+      <div class="grid-2">
+        <div class="card overview-card">
+          <div class="eyebrow">NORMALIZATION OVERVIEW</div>
+          <h2>Heterogeneous Vendor Log Unification</h2>
+          <p>Parses JSON, CSV, XML, Syslog, and CEF inputs into standardized key-value pairs using name and value similarity clustering.</p>
+          <div class="stat-row">
+            <div><div class="stat-num" id="statRecords">0</div><div class="stat-label">Total Records</div></div>
+            <div><div class="stat-num" id="statSources">0</div><div class="stat-label">Log Sources</div></div>
+            <div><div class="stat-num amber" id="statAccuracy">—</div><div class="stat-label">Auto-Match Rate</div></div>
+          </div>
+        </div>
+
+        <div class="card exec-card">
+          <div class="exec-head">
+            <h3>Pipeline Execution</h3>
+            <span class="badge-step" id="activeStepBadge">Step 01</span>
+          </div>
+          <div class="step" id="step1">
+            <div class="step-icon todo">1</div>
+            <div><div class="step-title">Upload &amp; Parse</div><div class="step-sub" id="step1sub">Waiting for files</div></div>
+          </div>
+          <div class="step" id="step2">
+            <div class="step-icon todo">2</div>
+            <div><div class="step-title">Normalize Envelope</div><div class="step-sub">Standard key-value wrapping</div></div>
+          </div>
+          <div class="step" id="step3">
+            <div class="step-icon todo">3</div>
+            <div><div class="step-title">Similarity Clustering</div><div class="step-sub" id="step3sub">Field suggestions pending</div></div>
+          </div>
+          <div class="step" id="step4">
+            <div class="step-icon todo">4</div>
+            <div><div class="step-title">Generate Canonical Logs</div><div class="step-sub">Universal log output</div></div>
+          </div>
+          <button type="button" class="exec-cta" id="genMappingsBtn" disabled>Generate Mappings &rarr;</button>
+        </div>
+      </div>
+
+      <div class="card dropzone" id="dropzone">
+        <div class="dropzone-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <h4>Drag and drop vendor log files</h4>
+        <p>Supports <b>JSON, CSV, Syslog, CEF</b> format streams (one JSON object or CSV row per line).</p>
+        <button class="btn primary" type="button" id="browseBtn">+ Browse Log Files</button>
+        <input type="file" id="fileInput" multiple accept=".json,.jsonl,.csv,.log,.txt,.cef" style="display:none">
+      </div>
+
+      <div class="card table-card hidden" id="filesCard">
+        <div class="table-card-head">
+          <div>
+            <h3>Uploaded Log Files</h3>
+            <p>Current active feeds prepared for schema unification.</p>
+          </div>
+          <span class="found-pill" id="filesReadyPill">0 Files Ready</span>
+        </div>
+        <table>
+          <thead><tr><th>FILE NAME</th><th>FORMAT</th><th>SOURCE TYPE</th><th>RECORDS</th><th>SIZE</th><th>STATUS</th><th></th></tr></thead>
+          <tbody id="filesTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 2: SUGGESTED MAPPINGS ================= -->
+    <div id="page-mappings" class="hidden">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="eyebrow">AUTO MAPPED</div><div class="big" id="cAuto">0</div><div class="sub">High confidence</div></div>
+        <div class="stat-card pending"><div class="eyebrow">PENDING REVIEW</div><div class="big" id="cPending">0</div><div class="sub">Action required</div></div>
+        <div class="stat-card"><div class="eyebrow">CONFIRMED</div><div class="big" id="cConfirmed">0</div><div class="sub">User verified</div></div>
+        <div class="stat-card"><div class="eyebrow">SKIPPED</div><div class="big" id="cSkipped">0</div><div class="sub">Kept separate</div></div>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <h3>Suggested Mappings</h3>
+          <p>Confirm or skip potential field equivalences found across vendor logs. Every decision is remembered — it won't ask again for the same pair.</p>
+        </div>
+        <button type="button" class="btn amber" id="genUnifiedBtn">Generate Unified Dataset &rarr;</button>
+      </div>
+      <div class="mapping-grid" id="mappingGrid"></div>
+      <div class="empty-state hidden" id="mappingsEmpty">
+        <p>No pending mappings yet. Upload files and run the pipeline on Page 1.</p>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 3: UNIFIED RECORDS ================= -->
+    <div id="page-records" class="hidden">
+      <div class="filter-row">
+        <div class="search" style="width:auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="recordsSearch" placeholder="Search ride IDs, user IDs, IPs, timestamps, statuses...">
+        </div>
+        <select class="dropdown" id="sourceFilter"><option>All Sources</option></select>
+        <select class="dropdown" id="statusFilter"><option>All Fields</option></select>
+      </div>
+      <div class="card records-card">
+        <div class="table-card-head">
+          <div>
+            <h3>Unified Canonical Records</h3>
+            <p>Transformed records mapped across all heterogeneous vendor schemas.</p>
+          </div>
+          <span class="found-pill" id="recordsFoundPill">0 Records Found</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="recordsTable"><thead><tr id="recordsHeadRow"></tr></thead><tbody id="recordsTbody"></tbody></table>
+        </div>
+        <div class="empty-state hidden" id="recordsEmpty">
+          <p>No records yet. Upload files, run the pipeline, and confirm mappings first.</p>
+        </div>
+        <div class="pager">
+          <span id="pagerLabel">Page 1 of 1</span>
+          <div class="pager-btns">
+            <button type="button" class="pager-btn" id="prevPage">&lsaquo;</button>
+            <button type="button" class="pager-btn" id="nextPage">&rsaquo;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 4: LINEAGE REPORT ================= -->
+    <div id="page-lineage" class="hidden">
+      <div class="lineage-head">
+        <div>
+          <h3 style="margin:0 0 4px;font-size:20px;">Lineage &amp; Equivalence Report</h3>
+          <p style="margin:0;font-size:13px;color:var(--ink-soft);">Audit field equivalence clusters and confirmation trail of field transformations.</p>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="btn" id="exportJsonBtn">Export JSON</button>
+          <button type="button" class="btn primary" id="downloadReportBtn">Download Report</button>
+        </div>
+      </div>
+
+      <div class="lineage-grid">
+        <div class="card">
+          <div class="section-head" style="margin-bottom:14px;">
+            <h3 style="font-size:15px;">Field Cluster Tree</h3>
+            <span class="found-pill">Union-Find Groups</span>
+          </div>
+          <div class="chip-row" id="clusterChips"></div>
+          <div id="clusterDetail"></div>
+          <div class="footnote">Clustered via name-similarity, value-type compatibility, and shared-value overlap.</div>
+        </div>
+
+        <div class="card">
+          <div class="section-head" style="margin-bottom:14px;">
+            <h3 style="font-size:15px;">Transformation Lineage Log</h3>
+            <span class="found-pill" id="avgConfPill">— Avg Confidence</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="lineage-table">
+              <thead><tr><th>ORIGINAL FIELD</th><th>CANONICAL FIELD</th><th>CONFIDENCE</th><th>TYPE</th></tr></thead>
+              <tbody id="lineageTbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state hidden" id="lineageEmpty"><p>No transformations recorded yet.</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   ULPF DASHBOARD — wired to the REAL Python backend (api.py), which
+   itself calls your actual parser.py / normalizer.py / field_mapper.py /
+   main.py functions. No logic is reimplemented in JS here — every
+   parse, name-similarity, value-overlap, and clustering decision comes
+   from the server response.
+===================================================================== */
+
+let API_BASE = localStorage.getItem("ulpf_api_base") || "http://localhost:8000";
+
+const state = {
+  files: [],
+  totalRecords: 0,
+  autoMatches: [],
+  pendingMatches: [],
+  decidedThisSession: {},   // key -> true/false, just for local UI state
+  records: [],
+  lineage: [],
+  avgConfidence: 0,
+  step: 1,
+  analysisComplete: false,
+};
+
+async function api(path, opts = {}) {
+  const res = await fetch(API_BASE + path, opts);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`${res.status} ${res.statusText} — ${text}`);
+  }
+  return res.json();
+}
+
+// ---------------------------------------------------------------------
+// CONNECTION STATUS
+// ---------------------------------------------------------------------
+async function checkConnection() {
+  const dot = document.getElementById("connDot");
+  const label = document.getElementById("connLabel");
+  try {
+    const s = await api("/api/status");
+    dot.style.background = "var(--green)";
+    label.textContent = "PYTHON ENGINE API CONNECTED";
+    state.totalRecords = s.total_records;
+    document.getElementById("statRecords").textContent = s.total_records.toLocaleString();
+    document.getElementById("statSources").textContent = new Set(state.files.map(f=>f.source)).size || (s.total_files ? s.total_files : 0);
+    document.getElementById("genMappingsBtn").disabled = state.totalRecords === 0;
+    return true;
+  } catch (e) {
+    dot.style.background = "var(--red)";
+    label.textContent = `BACKEND UNREACHABLE — start api.py on ${API_BASE}`;
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------
+// FORMAT / SOURCE INFERENCE (client only labels the upload request —
+// all actual parsing happens server-side via parser.py)
+// ---------------------------------------------------------------------
+function inferFormat(filename) {
+  const ext = filename.split(".").pop().toLowerCase();
+  if (ext === "csv") return "csv";
+  if (ext === "xml") return "xml";
+  if (ext === "cef") return "cef";
+  if (ext === "json" || ext === "jsonl") return "json";
+  return "syslog";
+}
+function inferSource(filename) {
+  const base = filename.toLowerCase();
+  if (base.includes("db")) return "db";
+  if (base.includes("net")) return "network";
+  if (base.includes("auth")) return "auth";
+  if (base.includes("bill") || base.includes("pay")) return "billing";
+  if (base.includes("sec") || base.includes("cef")) return "security";
+  return base.split(".")[0].slice(0, 16) || "custom";
+}
+function humanSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / 1024 / 1024).toFixed(1) + " MB";
+}
+
+// ---------------------------------------------------------------------
+// UPLOAD — real multipart POST to /api/upload (calls parser.py + normalizer.py)
+// ---------------------------------------------------------------------
+async function handleFiles(fileList) {
+  const connected = await checkConnection();
+  if (!connected) { alert(`Can't reach the backend at ${API_BASE}. Start it with:\n\ncd backend && uvicorn api:app --reload --port 8000`); return; }
+
+  for (const file of fileList) {
+    const format = inferFormat(file.name);
+    const source = inferSource(file.name);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("format_type", format);
+    form.append("source_type", source);
+
+    try {
+      const result = await api("/api/upload", { method: "POST", body: form });
+      state.files.push({ ...result.file });
+      state.totalRecords = result.total_records;
+    } catch (e) {
+      state.files.push({ name: file.name, format, source, records: 0, size: file.size, status: "ERROR" });
+      console.error(e);
+    }
+  }
+  renderFiles();
+  await updateOverviewStats();
+  setStep(2);
+  document.getElementById("genMappingsBtn").disabled = state.totalRecords === 0;
+}
+
+// ---------------------------------------------------------------------
+// ANALYZE — POST /api/analyze (calls field_mapper.py's real comparison functions)
+// ---------------------------------------------------------------------
+async function runAnalyze() {
+  const result = await api("/api/analyze", { method: "POST" });
+  state.autoMatches = result.auto_matched;
+  state.pendingMatches = result.needs_confirmation;
+  state.analysisComplete = true;
+}
+
+async function analyzeAndShowMappings() {
+  const button = document.getElementById("genMappingsBtn");
+  button.disabled = true;
+  button.textContent = "Analyzing mappings...";
+  setStep(3);
+  try {
+    await runAnalyze();
+    await updateOverviewStats();
+    await showPage("mappings");
+  } catch (e) {
+    console.error(e);
+    setStep(2);
+    alert(`Could not generate mappings: ${e.message}`);
+  } finally {
+    button.disabled = state.totalRecords === 0;
+    button.textContent = "Generate Mappings \u2192";
+  }
+}
+
+// ---------------------------------------------------------------------
+// DECIDE — POST /api/decide (writes to the real confirmed_mappings.json)
+// ---------------------------------------------------------------------
+async function decideMapping(key, accept) {
+  await api("/api/decide", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key, accept }),
+  });
+  state.decidedThisSession[key] = accept;
+  renderMappings();
+  await updateOverviewStats();
+  const remaining = state.pendingMatches.filter(m => state.decidedThisSession[m.key] === undefined).length;
+  if (remaining === 0) setStep(4);
+}
+window.decideMapping = decideMapping;
+
+// ---------------------------------------------------------------------
+// RECORDS + LINEAGE — GET from server (already canonicalized server-side)
+// ---------------------------------------------------------------------
+async function fetchRecords() {
+  const result = await api("/api/records");
+  state.records = result.records;
+}
+async function fetchLineage() {
+  const result = await api("/api/lineage");
+  state.lineage = result.lineage;
+  state.avgConfidence = result.avg_confidence;
+}
+
+async function updateOverviewStats() {
+  try {
+    const s = await api("/api/status");
+    document.getElementById("statRecords").textContent = s.total_records.toLocaleString();
+    document.getElementById("statSources").textContent = new Set(state.files.map(f => f.source)).size;
+    const totalSeen = s.auto_matched + s.pending + s.cached_decisions;
+    document.getElementById("statAccuracy").textContent = totalSeen ? Math.round((s.auto_matched / Math.max(1, totalSeen)) * 100) + "%" : "—";
+  } catch (e) { /* offline */ }
+}
+
+// ---------------------------------------------------------------------
+// RENDER — PAGE 1
+// ---------------------------------------------------------------------
+function renderFiles() {
+  const tbody = document.getElementById("filesTbody");
+  const card = document.getElementById("filesCard");
+  if (!state.files.length) { card.classList.add("hidden"); return; }
+  card.classList.remove("hidden");
+  document.getElementById("filesReadyPill").textContent = `${state.files.length} File${state.files.length !== 1 ? "s" : ""} Ready`;
+  tbody.innerHTML = state.files.map(f => `
+    <tr>
+      <td class="file-cell">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        ${f.name}
+      </td>
+      <td><span class="tag">${f.format.toUpperCase()}</span></td>
+      <td>${f.source}</td>
+      <td><b>${f.records}</b></td>
+      <td>${humanSize(f.size)}</td>
+      <td><span class="status-chip ${f.status === 'PARSED' ? 'ok' : 'err'}">${f.status}</span></td>
+      <td></td>
+    </tr>`).join("");
+}
+
+function setStep(n) {
+  state.step = n;
+  document.getElementById("activeStepBadge").textContent = "Step " + String(n).padStart(2, "0");
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById("step" + i);
+    const icon = el.querySelector(".step-icon");
+    icon.classList.remove("done", "active", "todo");
+    if (i < n) { icon.classList.add("done"); icon.innerHTML = "\u2713"; }
+    else if (i === n) { icon.classList.add("active"); icon.textContent = i; }
+    else { icon.classList.add("todo"); icon.textContent = i; }
+  }
+  document.getElementById("step1sub").textContent = state.files.length ? `${state.files.length} log feed(s) parsed` : "Waiting for files";
+  document.getElementById("step3sub").textContent = state.pendingMatches.length ? `${state.pendingMatches.length} field suggestions pending` : "No ambiguous fields";
+}
+
+// ---------------------------------------------------------------------
+// RENDER — PAGE 2: MAPPINGS
+// ---------------------------------------------------------------------
+function renderMappings() {
+  const savedMatches = state.autoMatches.filter(m => m.cached).length;
+  document.getElementById("cAuto").textContent = state.autoMatches.length - savedMatches;
+  const stillPending = state.pendingMatches.filter(m => state.decidedThisSession[m.key] === undefined);
+  document.getElementById("cPending").textContent = stillPending.length;
+  document.getElementById("cConfirmed").textContent = Object.values(state.decidedThisSession).filter(v => v === true).length + savedMatches;
+  document.getElementById("cSkipped").textContent = Object.values(state.decidedThisSession).filter(v => v === false).length;
+
+  const grid = document.getElementById("mappingGrid");
+  const empty = document.getElementById("mappingsEmpty");
+  const cards = state.autoMatches.map(m => `
+    <div class="map-card">
+      <div class="map-card-head">
+        <span class="src">${m.a.toUpperCase()} \u2194 ${m.b.toUpperCase()}</span>
+        <span class="match-chip">${m.cached ? "Previously confirmed" : `${Math.round(m.confidence * 100)}% Auto-matched`}</span>
+      </div>
+      <div class="field-box">
+        <div class="field-label">FIELD A</div>
+        <div class="field-val">${m.a}</div>
+        <div class="divider-arrow">\u2193 ${m.cached ? "previously confirmed as" : "automatically mapped to"}</div>
+        <div class="field-label">FIELD B</div>
+        <div class="field-val green">${m.b}</div>
+      </div>
+      <div class="decided-tag accepted">\u2713 ${m.reason}</div>
+    </div>`);
+
+  cards.push(...state.pendingMatches.map(m => {
+    const pct = Math.round(Math.max(m.score, m.ratio) * 100);
+    const decided = state.decidedThisSession[m.key];
+    const chipClass = pct >= 80 ? "" : "mid";
+    return `
+    <div class="map-card">
+      <div class="map-card-head">
+        <span class="src">${m.a.toUpperCase()} \u2194 ${m.b.toUpperCase()}</span>
+        <span class="match-chip ${chipClass}">${pct}% Match</span>
+      </div>
+      <div class="field-box">
+        <div class="field-label">FIELD A</div>
+        <div class="field-val">${m.a}</div>
+        <div class="divider-arrow">\u2193 suggested same as</div>
+        <div class="field-label">FIELD B</div>
+        <div class="field-val green">${m.b}</div>
+      </div>
+      <div class="sample-row">Sample A: <span class="sample-code">${String(m.sampleA)}</span></div>
+      <div class="sample-row">Sample B: <span class="sample-code">${String(m.sampleB)}</span></div>
+      <ul class="evidence-list">
+        <li>Name similarity score (${m.score.toFixed(2)})</li>
+        ${m.common.length ? `<li>Shared values: ${m.common.slice(0, 3).join(", ")}</li>` : "<li>No direct value overlap found</li>"}
+      </ul>
+      ${decided === undefined ? `
+      <div class="map-actions">
+        <button type="button" class="map-btn accept" onclick="decideMapping('${m.key}', true)">\u2713 Accept</button>
+        <button type="button" class="map-btn skip" onclick="decideMapping('${m.key}', false)">\u2715 Skip</button>
+      </div>` : `<div class="decided-tag ${decided ? 'accepted' : 'skipped'}">${decided ? '\u2713 Accepted — merged' : '\u2715 Skipped — kept separate'}</div>`}
+    </div>`;
+  }));
+
+  if (!cards.length) {
+    grid.innerHTML = "";
+    empty.querySelector("p").textContent = state.analysisComplete
+      ? "No field mappings were found for the uploaded records."
+      : "Upload files and generate mappings to see suggestions.";
+    empty.classList.remove("hidden");
+  } else {
+    empty.classList.add("hidden");
+    grid.innerHTML = cards.join("");
+  }
+  const dot = document.getElementById("mapDot");
+  dot.classList.toggle("hidden", stillPending.length === 0);
+}
+
+// ---------------------------------------------------------------------
+// RENDER — PAGE 3: UNIFIED RECORDS
+// ---------------------------------------------------------------------
+let recordsPage = 0;
+const PAGE_SIZE = 8;
+
+function allFieldNames() {
+  const s = new Set();
+  state.records.forEach(r => Object.keys(r.fields).forEach(f => s.add(f)));
+  return [...s];
+}
+
+function renderRecordsFilters() {
+  const sourceSel = document.getElementById("sourceFilter");
+  const fieldSel = document.getElementById("statusFilter");
+  const sources = [...new Set(state.records.map(r => r.source_type))];
+  sourceSel.innerHTML = `<option>All Sources</option>` + sources.map(s => `<option>${s}</option>`).join("");
+  const fields = allFieldNames();
+  fieldSel.innerHTML = `<option>All Fields</option>` + fields.map(f => `<option>${f}</option>`).join("");
+}
+
+function renderRecords() {
+  renderRecordsFilters();
+  const search = document.getElementById("recordsSearch").value.trim().toLowerCase();
+  const srcFilter = document.getElementById("sourceFilter").value;
+  let rows = state.records;
+  if (srcFilter && srcFilter !== "All Sources") rows = rows.filter(r => r.source_type === srcFilter);
+  if (search) rows = rows.filter(r => JSON.stringify(r.fields).toLowerCase().includes(search) || r.source_type.toLowerCase().includes(search));
+
+  document.getElementById("recordsFoundPill").textContent = `${rows.length} Record${rows.length !== 1 ? "s" : ""} Found`;
+
+  const cols = allFieldNames().slice(0, 7);
+  const headRow = document.getElementById("recordsHeadRow");
+  const empty = document.getElementById("recordsEmpty");
+  const table = document.getElementById("recordsTable");
+
+  if (!rows.length) {
+    table.classList.add("hidden"); empty.classList.remove("hidden");
+    document.getElementById("pagerLabel").textContent = "Page 0 of 0";
+    return;
+  }
+  table.classList.remove("hidden"); empty.classList.add("hidden");
+  headRow.innerHTML = `<th>SOURCE</th>` + cols.map(c => `<th>${c.replace(/_/g, " ").toUpperCase()}</th>`).join("");
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  recordsPage = Math.min(recordsPage, totalPages - 1);
+  const pageRows = rows.slice(recordsPage * PAGE_SIZE, recordsPage * PAGE_SIZE + PAGE_SIZE);
+
+  document.getElementById("recordsTbody").innerHTML = pageRows.map(r => {
+    const cells = cols.map(c => {
+      const v = r.fields[c];
+      if (v === undefined) return `<td style="color:#C9C6B8;">—</td>`;
+      if (String(c).includes("status")) return `<td><span class="status-val ${String(v).toLowerCase()}">${v}</span></td>`;
+      if (String(c).includes("amount") || String(c).includes("fare")) return `<td><b>${isNaN(v) ? v : "$" + Number(v).toFixed(2)}</b></td>`;
+      return `<td>${v}</td>`;
+    }).join("");
+    return `<tr><td><span class="tag">${r.source_type}</span></td>${cells}</tr>`;
+  }).join("");
+
+  document.getElementById("pagerLabel").textContent = `Page ${recordsPage + 1} of ${totalPages}`;
+  document.getElementById("prevPage").disabled = recordsPage === 0;
+  document.getElementById("nextPage").disabled = recordsPage >= totalPages - 1;
+}
+
+// ---------------------------------------------------------------------
+// RENDER — PAGE 4: LINEAGE
+// ---------------------------------------------------------------------
+let activeClusterField = null;
+
+function renderLineage() {
+  const clusters = {};
+  state.lineage.forEach(l => { (clusters[l.canonical] = clusters[l.canonical] || []).push(l); });
+  const names = Object.keys(clusters);
+  const chipRow = document.getElementById("clusterChips");
+
+  if (!names.length) {
+    chipRow.innerHTML = `<span style="font-size:13px;color:var(--ink-soft);">No clusters yet — confirm some mappings first.</span>`;
+    document.getElementById("clusterDetail").innerHTML = "";
+  } else {
+    if (!activeClusterField || !names.includes(activeClusterField)) activeClusterField = names[0];
+    chipRow.innerHTML = names.map(n => `<button type="button" class="field-chip ${n === activeClusterField ? 'active' : ''}" onclick="selectCluster('${n}')">${n}</button>`).join("");
+    const members = clusters[activeClusterField];
+    document.getElementById("clusterDetail").innerHTML = `
+      <div class="root-box"><span class="root-dot"></span><span class="lbl">CANONICAL ROOT:</span> <span class="val">${activeClusterField}</span></div>
+      ${members.map(m => `
+        <div class="cluster-item">
+          <span class="name">${m.original}</span>
+          <span class="dist">${(1 - m.confidence).toFixed(2)} distance</span>
+        </div>`).join("")}
+    `;
+  }
+
+  const tbody = document.getElementById("lineageTbody");
+  const empty = document.getElementById("lineageEmpty");
+  if (!state.lineage.length) {
+    tbody.innerHTML = ""; empty.classList.remove("hidden");
+  } else {
+    empty.classList.add("hidden");
+    tbody.innerHTML = state.lineage.map(l => `
+      <tr>
+        <td><code class="mono" style="color:#B23A3A;">${l.original}</code></td>
+        <td><code class="mono" style="color:#1E7A46;">${l.canonical}</code></td>
+        <td class="${l.confidence >= 0.85 ? 'conf-good' : 'conf-mid'}">${l.confidence.toFixed(2)}</td>
+        <td><span class="type-tag ${l.type}">${l.type}</span></td>
+      </tr>`).join("");
+    document.getElementById("avgConfPill").textContent = `${(state.avgConfidence * 100).toFixed(1)}% Avg Confidence`;
+  }
+}
+window.selectCluster = function (name) { activeClusterField = name; renderLineage(); };
+
+// ---------------------------------------------------------------------
+// NAVIGATION
+// ---------------------------------------------------------------------
+const pageSubtitles = {
+  upload: "Convert heterogeneous vendor logs into a unified canonical structure.",
+  mappings: "Review &amp; confirm uncertain field mapping suggestions from the live backend.",
+  records: "Search, filter, and inspect transformed canonical log records.",
+  lineage: "Audit field equivalence classes and confirmation trail from the backend.",
+};
+
+let _currentPage = "upload";
+
+function switchPageDOM(page) {
+  // Synchronous DOM toggle — instant, prevents race conditions
+  _currentPage = page;
+  ["upload", "mappings", "records", "lineage"].forEach(p => {
+    document.getElementById("page-" + p).classList.toggle("hidden", p !== page);
+  });
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  document.getElementById("pageSubtitle").innerHTML = pageSubtitles[page];
+}
+
+async function showPage(page) {
+  switchPageDOM(page);
+
+  if (page === "mappings") {
+    if (!state.analysisComplete && state.totalRecords > 0) {
+      try {
+        const connected = await checkConnection();
+        if (connected) {
+          await runAnalyze();
+          await updateOverviewStats();
+        }
+      } catch (e) {
+        console.error("showPage mappings analyze error:", e);
+        alert(`Could not generate mappings: ${e.message}`);
+      }
+    }
+    if (_currentPage === "mappings") renderMappings();
+  }
+  if (page === "records" && _currentPage === "records") { await fetchRecords(); renderRecords(); }
+  if (page === "lineage" && _currentPage === "lineage") { await fetchLineage(); renderLineage(); }
+}
+document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => showPage(btn.dataset.page)));
+
+// ---------------------------------------------------------------------
+// WIRING
+// ---------------------------------------------------------------------
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+document.getElementById("browseBtn").addEventListener("click", e => { e.stopPropagation(); fileInput.click(); });
+dropzone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => handleFiles(e.target.files));
+["dragenter", "dragover"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add("drag"); }));
+["dragleave", "drop"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove("drag"); }));
+dropzone.addEventListener("drop", e => { if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+
+document.getElementById("genMappingsBtn").addEventListener("click", async () => {
+  await analyzeAndShowMappings();
+});
+document.getElementById("runPipelineBtn").addEventListener("click", async () => {
+  if (!state.totalRecords && !(await checkConnection())) return;
+  if (!state.totalRecords) {
+    alert("Upload at least one valid file before running the pipeline.");
+    return;
+  }
+  await analyzeAndShowMappings();
+});
+document.getElementById("genUnifiedBtn").addEventListener("click", async () => {
+  setStep(4);
+  await api("/api/merge", { method: "POST" });
+  await fetchRecords();
+  await showPage("records");
+});
+document.getElementById("resetBtn").addEventListener("click", async () => {
+  try { await api("/api/reset", { method: "POST" }); } catch (e) {}
+  Object.assign(state, { files: [], totalRecords: 0, autoMatches: [], pendingMatches: [], decidedThisSession: {}, records: [], lineage: [], avgConfidence: 0, step: 1, analysisComplete: false });
+  recordsPage = 0; activeClusterField = null;
+  renderFiles();
+  document.getElementById("statRecords").textContent = "0";
+  document.getElementById("statSources").textContent = "0";
+  document.getElementById("statAccuracy").textContent = "—";
+  setStep(1);
+  document.getElementById("genMappingsBtn").disabled = true;
+  await showPage("upload");
+});
+
+document.getElementById("recordsSearch").addEventListener("input", () => { recordsPage = 0; renderRecords(); });
+document.getElementById("sourceFilter").addEventListener("change", () => { recordsPage = 0; renderRecords(); });
+document.getElementById("statusFilter").addEventListener("change", renderRecords);
+document.getElementById("prevPage").addEventListener("click", () => { recordsPage = Math.max(0, recordsPage - 1); renderRecords(); });
+document.getElementById("nextPage").addEventListener("click", () => { recordsPage++; renderRecords(); });
+
+document.getElementById("exportJsonBtn").addEventListener("click", async () => {
+  await fetchRecords();
+  const blob = new Blob([JSON.stringify({ record_count: state.records.length, records: state.records }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "merged_output.json"; a.click();
+});
+document.getElementById("downloadReportBtn").addEventListener("click", async () => {
+  await fetchLineage();
+  const rows = state.lineage.map(l => `${l.original},${l.canonical},${l.confidence.toFixed(2)},${l.type}`).join("\n");
+  const csv = "original_field,canonical_field,confidence,type\n" + rows;
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "lineage_report.csv"; a.click();
+});
+
+document.getElementById("apiBaseInput")?.addEventListener("change", (e) => {
+  API_BASE = e.target.value.trim() || "http://localhost:8000";
+  localStorage.setItem("ulpf_api_base", API_BASE);
+  checkConnection();
+});
+
+// init
+setStep(1);
+showPage("upload");
+checkConnection();
+setInterval(checkConnection, 8000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+Mar 15 08:22:10 app-server-01 auth[1042]: user_id=USR-4421 action=LOGIN status=success ip_address=192.168.1.10 session_id=SES-8821
+Mar 15 09:14:33 app-server-01 auth[1042]: user_id=USR-5530 action=LOGIN status=failed ip_address=203.0.113.5 session_id=SES-9901 reason=bad_password
+Mar 15 11:05:44 app-server-02 auth[2210]: user_id=USR-4421 action=LOGOUT status=success ip_address=192.168.1.10 session_id=SES-8821
+Mar 15 13:47:02 app-server-01 auth[1042]: user_id=USR-9901 action=LOGIN status=success ip_address=10.0.0.22 session_id=SES-3312
+Mar 15 16:22:55 app-server-03 auth[3301]: user_id=USR-3317 action=LOGIN status=success ip_address=192.168.1.99 session_id=SES-4450

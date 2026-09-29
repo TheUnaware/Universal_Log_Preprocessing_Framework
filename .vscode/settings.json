@@ -1,0 +1,10 @@
+{
+  "liveServer.settings.ignoreFiles": [
+    "**/*.json",
+    "**/*.jsonl",
+    "**/__pycache__/**",
+    "**/sample_logs/**",
+    "**/*.py"
+  ],
+  "liveServer.settings.donotVerifyTags": true
+}

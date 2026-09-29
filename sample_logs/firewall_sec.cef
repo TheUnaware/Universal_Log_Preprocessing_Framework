@@ -1,0 +1,5 @@
+CEF:0|SecureNet|FirewallNG|3.1|110|Connection Allowed|3|src=192.168.1.10 dst=10.0.0.5 spt=52341 dpt=443 proto=TCP user_id=USR-4421 act=ALLOW bytes=4096 timestamp=2024-03-15T08:20:05Z
+CEF:0|SecureNet|FirewallNG|3.1|120|Connection Blocked|7|src=203.0.113.42 dst=10.0.0.5 spt=80 dpt=22 proto=TCP user_id=USR-ANON act=BLOCK bytes=512 timestamp=2024-03-15T08:21:33Z
+CEF:0|SecureNet|FirewallNG|3.1|110|Connection Allowed|2|src=192.168.1.14 dst=10.0.0.8 spt=61200 dpt=80 proto=TCP user_id=USR-5530 act=ALLOW bytes=1240 timestamp=2024-03-15T09:10:00Z
+CEF:0|SecureNet|FirewallNG|3.1|130|Intrusion Attempt|9|src=198.51.100.77 dst=10.0.0.5 spt=0 dpt=3306 proto=TCP user_id=USR-ANON act=BLOCK bytes=256 timestamp=2024-03-15T10:02:17Z
+CEF:0|SecureNet|FirewallNG|3.1|110|Connection Allowed|1|src=192.168.1.10 dst=10.0.0.9 spt=55000 dpt=443 proto=TCP user_id=USR-4421 act=ALLOW bytes=8192 timestamp=2024-03-15T11:00:55Z

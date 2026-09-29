@@ -1,0 +1,3 @@
+{"db_event": "ride_created", "rideid": "RD-94021", "userid": "USR-7731", "pickup_time": "18:14:02", "trip_date": "2026-09-01", "fare_amt": 45.20}
+{"db_event": "ride_created", "rideid": "RD-94022", "userid": "USR-8812", "pickup_time": "18:12:45", "trip_date": "2026-09-01", "fare_amt": 12.00}
+{"db_event": "ride_completed", "rideid": "RD-94024", "userid": "USR-3392", "pickup_time": "18:05:00", "trip_date": "2026-09-01", "fare_amt": 64.00}

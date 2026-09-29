@@ -518,7 +518,8 @@
    from the server response.
 ===================================================================== */
 
-let API_BASE = localStorage.getItem("ulpf_api_base") || "http://localhost:8000";
+let API_BASE = localStorage.getItem("ulpf_api_base") || 
+  (window.location.protocol.startsWith("http") ? window.location.origin : "http://localhost:8000");
 
 const state = {
   files: [],
@@ -1026,6 +1027,7 @@ document.getElementById("apiBaseInput")?.addEventListener("change", (e) => {
 });
 
 // init
+if (document.getElementById("apiBaseInput")) document.getElementById("apiBaseInput").value = API_BASE;
 setStep(1);
 showPage("upload");
 checkConnection();

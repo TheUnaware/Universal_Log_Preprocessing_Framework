@@ -1,5 +1,11 @@
 # Universal Log Preprocessing Framework (ULPF)
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://ulpf-dashboard-y9pe.onrender.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
+
+> 🚀 **Live Web Prototype:** [https://ulpf-dashboard-y9pe.onrender.com](https://ulpf-dashboard-y9pe.onrender.com)
+
 An intelligent, multi-format log ingestion, normalization, and field-mapping engine with both an **interactive web dashboard** and an **automated CLI pipeline**.
 
 ULPF unifies heterogeneous log formats (**JSON, CSV, Syslog, CEF, XML**) from different vendors and environments into a single, canonical schema using value-type compatibility, string distance algorithms, and data overlap clustering.
@@ -66,7 +72,9 @@ pip install -r requirements.txt
 
 ### Option A: Using the Interactive Web Dashboard
 
-The dashboard provides a visual interface for uploading feeds, reviewing suggested mappings, inspecting canonical logs, and exporting reports.
+> 🌐 **Try it online instantly:** Visit **[https://ulpf-dashboard-y9pe.onrender.com](https://ulpf-dashboard-y9pe.onrender.com)** (no installation required).
+
+To run it locally on your machine:
 
 #### Step 1: Start the Backend API
 
